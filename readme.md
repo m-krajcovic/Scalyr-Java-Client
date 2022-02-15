@@ -20,13 +20,13 @@ Add the following dependency to your project's pom.xml (check [Maven Central](ht
         <dependency>
             <groupId>com.scalyr</groupId>
             <artifactId>scalyr-client</artifactId>
-            <version>6.0.27</version>
+            <version>6.0.29</version>
         </dependency>
 
 
 ##### Downloading JARs directly
 
-* Download the Java client library from [Maven Central](https://oss.sonatype.org/content/groups/public/com/scalyr/scalyr-client/6.0.27/scalyr-client-6.0.27.jar) and add it to your project.
+* Download the [Java client library](https://oss.sonatype.org/content/groups/public/com/scalyr/scalyr-client/6.0.29/scalyr-client-6.0.29.jar) directly from Maven Central and add it to your project.
 
 
 #### Note about json-simple
