@@ -115,7 +115,7 @@
                         <configuration>
                             <show>public</show>
                             <additionalparam>-Xdoclint:none</additionalparam>
-                            <sourcepath>${project.basedir}/src</sourcepath>
+                            <sourcepath>${project.build.sourceDirectory}</sourcepath>
                         </configuration>
                     </execution>
                 </executions>
