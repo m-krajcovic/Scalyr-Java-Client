@@ -53,6 +53,8 @@ public class LogsClientTest extends LogsTestBase {
     EventUploader._eventUploadByteThreshold = TuningConstants.EVENT_UPLOAD_BYTE_THRESHOLD;
     Events.setEventFilter(null);
     EventUploader._disableUploadTimer = false;
+    EventUploader._discardBatchesAfterPersistentFailures = true;
+
     Events._reset("testSession", server, 200, false, true);
 
     super.teardown();
@@ -1048,9 +1050,6 @@ public class LogsClientTest extends LogsTestBase {
   }
 
   private void testPersistentErrorHandling(boolean disabled) {
-    // this test heisenbugs on jenkins; rather than chase it down we just skip it there
-    Assume.assumeTrue(System.getenv("JENKINS_HOME") == null);
-
     ScalyrUtil.setCustomTimeNs(10 * 1000000000L);
     long threadId = Thread.currentThread().getId();
     String threadName = Thread.currentThread().getName();

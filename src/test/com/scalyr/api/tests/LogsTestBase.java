@@ -17,15 +17,9 @@
 
 package com.scalyr.api.tests;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import org.junit.Before;
-
-import com.scalyr.api.internal.ScalyrUtil;
 import com.scalyr.api.json.JSONObject;
 import com.scalyr.api.logs.LogService;
-import com.scalyr.api.tests.MockServer.ExpectedRequest;
+import org.junit.Before;
 
 public class LogsTestBase extends ScalyrApiTestBase {
   protected MockLogServer server;
@@ -37,8 +31,6 @@ public class LogsTestBase extends ScalyrApiTestBase {
   }
 
   protected class MockLogServer extends LogService {
-    public final BlockingQueue<ExpectedRequest> expectedRequests = new LinkedBlockingQueue<ExpectedRequest>();
-
     public MockLogServer() {
       super("dummyToken");
       setServerAddress("dummyServerAddress");
