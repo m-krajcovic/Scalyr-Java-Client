@@ -28,7 +28,10 @@ import java.util.function.*;
  *   log.ev().add("cmd", "send", "details", "Network error").err(e).carp(warnLimit);
  *   log.limit(statsLimit, () -> log.ev().add("cmd", "send", "details", "Stats").add(stats::annot).info());
  * </pre>
+ *
+ * @deprecated Replaced by {@link AttributeLog} interface.
  */
+@Deprecated
 public interface KeyValueLog<T extends EventLog.AbstractBuilder<T>> {
 
   /** Begin a log message. */

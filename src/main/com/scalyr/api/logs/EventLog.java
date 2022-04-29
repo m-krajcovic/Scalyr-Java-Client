@@ -27,7 +27,10 @@ import java.util.stream.Collectors;
  * A {@link KeyValueLog} log that provides a basic event builder. See: {@link KeyValueLog} for example usage.
  *
  * This class is not normally used directly, but is instead used by a `getLogger` factory method.
+ *
+ * @deprecated Replaced by {@link AttributeLogImpl}.
  */
+@Deprecated
 public final class EventLog implements KeyValueLog<EventLog.Builder> {
 
   private final BiConsumer<Severity, EventAttributes> sink;

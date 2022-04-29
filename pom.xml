@@ -4,7 +4,7 @@
     <groupId>com.scalyr</groupId>
     <artifactId>scalyr-client</artifactId>
     <packaging>jar</packaging>
-    <version>6.0.30-SNAPSHOT</version>
+    <version>6.0.31-SNAPSHOT</version>
     <name>Scalyr Client</name>
     <description>Client library for the Scalyr API</description>
     <url>https://github.com/scalyr/Scalyr-Java-Client</url>
@@ -104,7 +104,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.3</version>
+                <version>3.3.2</version>
                 <executions>
                     <execution>
                         <id>javadoc</id>
@@ -114,8 +114,9 @@
                         </goals>
                         <configuration>
                             <show>public</show>
-                            <additionalparam>-Xdoclint:none</additionalparam>
                             <sourcepath>${project.build.sourceDirectory}</sourcepath>
+                            <source>8</source>
+                            <doclint>none</doclint>
                         </configuration>
                     </execution>
                 </executions>
@@ -175,7 +176,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.4</version>
+                        <version>3.3.2</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -183,7 +184,9 @@
                                     <goal>jar</goal>
                                 </goals>
                                 <configuration>
-                                    <additionalparam>-Xdoclint:none</additionalparam>
+                                    <sourcepath>${project.build.sourceDirectory}</sourcepath>
+                                    <source>8</source>
+                                    <doclint>none</doclint>
                                 </configuration>
                             </execution>
                         </executions>

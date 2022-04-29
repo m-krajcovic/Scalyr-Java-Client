@@ -17,15 +17,10 @@
 
 package com.scalyr.api.logs;
 
-import java.util.Collections;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 
@@ -156,6 +151,18 @@ public class EventAttributes {
   }
 
   /**
+   * Construct an attribute list using an array of entries. Even-numbered elements are
+   * attribute names, and odd-numbered elements are attribute values.
+   * NOTE: this is different from {@link #EventAttributes(Object...)} that takes a series of scalar args.
+   */
+  public static EventAttributes fromArray(Object[] terms) {
+    EventAttributes attrs = new EventAttributes();
+    for (int i = 0; i < terms.length; i += 2)
+      attrs.put((String)terms[i], terms[i+1]);
+    return attrs;
+  }
+
+  /**
    * Construct a shallow copy of the given object.
    */
   public EventAttributes(EventAttributes source) {
@@ -234,6 +241,131 @@ public class EventAttributes {
   public EventAttributes put(String key, Object value) {
     synchronized (values) {
       values.put(key, toValueType(value));
+    }
+    return this;
+  }
+
+  /** Construct an empty attribute list, wraps {@link #EventAttributes} ctor. */
+  public static EventAttributes ev() {
+    return new EventAttributes();
+  }
+
+  /** Construct an attribute list from an existing one, wraps {@link #EventAttributes} ctor. */
+  public static EventAttributes ev(EventAttributes attrs) {
+    return new EventAttributes(attrs);
+  }
+
+  /** Construct a one-entry attribute list, wraps {@link #EventAttributes} ctor. */
+  public static EventAttributes ev(String key1, Object value1) {
+    return new EventAttributes(key1, value1);
+  }
+
+  /** Construct a two-entry attribute list, wraps {@link #EventAttributes} ctor. */
+  public static EventAttributes ev(String key1, Object value1, String key2, Object value2) {
+    return new EventAttributes(key1, value1, key2, value2);
+  }
+
+  /** Construct a three-entry attribute list, wraps {@link #EventAttributes} ctor. */
+  public static EventAttributes ev(String key1, Object value1, String key2, Object value2, String key3, Object value3) {
+    return new EventAttributes(key1, value1, key2, value2, key3, value3);
+  }
+
+  /** Construct a four-entry attribute list, wraps {@link #EventAttributes} ctor. */
+  public static EventAttributes ev(String key1, Object value1, String key2, Object value2, String key3, Object value3,
+    String key4, Object value4) {
+    return new EventAttributes(key1, value1, key2, value2, key3, value3, key4, value4);
+  }
+
+  /** Construct a five-entry attribute list, wraps {@link #EventAttributes} ctor. */
+  public static EventAttributes ev(String key1, Object value1, String key2, Object value2, String key3, Object value3,
+    String key4, Object value4, String key5, Object value5) {
+    return new EventAttributes(key1, value1, key2, value2, key3, value3, key4, value4, key5, value5);
+  }
+
+  /** Construct a six-entry attribute list, wraps {@link #EventAttributes} ctor. */
+  public static EventAttributes ev(String key1, Object value1, String key2, Object value2, String key3, Object value3,
+    String key4, Object value4, String key5, Object value5, String key6, Object value6) {
+    return new EventAttributes(key1, value1, key2, value2, key3, value3, key4, value4, key5, value5, key6, value6);
+  }
+
+  /** Add another set of attributes to this one and return modified self. */
+  public EventAttributes add(EventAttributes attrs) {
+    return addAll(attrs);
+  }
+
+  /** Add attributes from function call to existing set and return modified self. */
+  public EventAttributes add(Consumer<EventAttributes> fn) {
+    fn.accept(this);
+    return this;
+  }
+
+  /** Add attributes from function call to existing set and return modified self. */
+  public EventAttributes add(Supplier<EventAttributes> fn) {
+    return add(fn.get());
+  }
+
+  /** Add one attribute to existing set and return modified self. */
+  public EventAttributes add(String key1, Object value1) {
+    synchronized (values) {
+      values.put(key1, toValueType(value1));
+    }
+    return this;
+  }
+
+  /** Add two attributes to existing set and return modified self. */
+  public EventAttributes add(String key1, Object value1, String key2, Object value2) {
+    synchronized (values) {
+      values.put(key1, toValueType(value1));
+      values.put(key2, toValueType(value2));
+    }
+    return this;
+  }
+
+  /** Add three attributes to existing set and return modified self. */
+  public EventAttributes add(String key1, Object value1, String key2, Object value2, String key3, Object value3) {
+    synchronized (values) {
+      values.put(key1, toValueType(value1));
+      values.put(key2, toValueType(value2));
+      values.put(key3, toValueType(value3));
+    }
+    return this;
+  }
+
+  /** Add four attributes to existing set and return modified self. */
+  public EventAttributes add(String key1, Object value1, String key2, Object value2, String key3, Object value3,
+    String key4, Object value4) {
+    synchronized (values) {
+      values.put(key1, toValueType(value1));
+      values.put(key2, toValueType(value2));
+      values.put(key3, toValueType(value3));
+      values.put(key4, toValueType(value4));
+    }
+    return this;
+  }
+
+  /** Add five attributes to existing set and return modified self. */
+  public EventAttributes add(String key1, Object value1, String key2, Object value2, String key3, Object value3,
+    String key4, Object value4, String key5, Object value5) {
+    synchronized (values) {
+      values.put(key1, toValueType(value1));
+      values.put(key2, toValueType(value2));
+      values.put(key3, toValueType(value3));
+      values.put(key4, toValueType(value4));
+      values.put(key5, toValueType(value5));
+    }
+    return this;
+  }
+
+  /** Add six attributes to existing set and return modified self. */
+  public EventAttributes add(String key1, Object value1, String key2, Object value2, String key3, Object value3,
+    String key4, Object value4, String key5, Object value5, String key6, Object value6) {
+    synchronized (values) {
+      values.put(key1, toValueType(value1));
+      values.put(key2, toValueType(value2));
+      values.put(key3, toValueType(value3));
+      values.put(key4, toValueType(value4));
+      values.put(key5, toValueType(value5));
+      values.put(key6, toValueType(value6));
     }
     return this;
   }
