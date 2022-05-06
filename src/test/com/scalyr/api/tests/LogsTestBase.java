@@ -18,6 +18,8 @@
 package com.scalyr.api.tests;
 
 import com.scalyr.api.json.JSONObject;
+import com.scalyr.api.knobs.ConfigurationFile;
+import com.scalyr.api.knobs.Knob;
 import com.scalyr.api.logs.LogService;
 import org.junit.Before;
 
@@ -28,6 +30,7 @@ public class LogsTestBase extends ScalyrApiTestBase {
     super.setup();
 
     server = new MockLogServer();
+    Knob.setDefaultFiles(new ConfigurationFile[0]);
   }
 
   protected class MockLogServer extends LogService {
@@ -41,6 +44,10 @@ public class LogsTestBase extends ScalyrApiTestBase {
     }
 
     @Override public JSONObject invokeApi(String methodName, JSONObject parameters, boolean enableGzip) {
+      return mockServer.invokeApi(methodName, parameters);
+    }
+
+    @Override public JSONObject invokeApi(String methodName, JSONObject parameters, String contentEncoding) {
       return mockServer.invokeApi(methodName, parameters);
     }
   }

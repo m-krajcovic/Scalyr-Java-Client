@@ -24,21 +24,25 @@ import java.util.zip.GZIPInputStream;
  * Has Gzip compression capability.
  */
 public class ApacheHttpClient extends AbstractHttpClient {
+  private static final Knob.Integer scalyrClientMaxConnections = new Knob.Integer("scalyrClientMaxConnections", 20);
+  private static final Knob.Integer scalyrClientMaxConnectionsPreRoute = new Knob.Integer("scalyrClientMaxConnectionsPreRoute", 15);
+
   /**
    * Connection manager used to issue requests to the Scalyr server.
    */
   private static volatile PoolingHttpClientConnectionManager connectionManager;
 
-  private CloseableHttpResponse response;
-  private InputStream responseStream;
-  private String responseContentType;
-  private String responseEncoding;
+  private final CloseableHttpResponse response;
+  private final InputStream responseStream;
+  private final String responseContentType;
+  private final String responseEncoding;
 
   /**
    * Version of constructor with desired Content-Encoding passed in.
    */
-  public ApacheHttpClient(URL url, int requestLength, boolean closeConnections, RpcOptions options,
-                          byte[] requestBody, int requestBodyLength, String contentType, String contentEncoding) throws IOException {
+  public ApacheHttpClient(URL url, RpcOptions options,
+                          byte[] requestBody, int requestBodyLength,
+                          String contentType, String contentEncoding) throws IOException {
     if (connectionManager == null) {
       synchronized (ApacheHttpClient.class) {
         if (connectionManager == null) {
@@ -67,10 +71,7 @@ public class ApacheHttpClient extends AbstractHttpClient {
       request.setHeader("Accept-Encoding", contentEncoding + ", identity");
     }
 
-    ByteArrayEntity inputEntity = new ByteArrayEntity(requestBody, 0, requestBodyLength);
-    inputEntity.setContentType(contentType);
-
-    request.setEntity("gzip".equals(contentEncoding) ? new GzipCompressingEntity(inputEntity) : inputEntity);
+    request.setEntity(getEntity(requestBody, requestBodyLength, contentType, contentEncoding));
 
     request.setConfig(configBuilder.build());
 
@@ -82,15 +83,22 @@ public class ApacheHttpClient extends AbstractHttpClient {
     responseStream = getResponseStream(responseEntity, responseEncoding);
   }
 
-  /**
-   * Version of constructor with a Gzip Compression toggle, rather than a freely settable content-encoding.
-   * If enableGzip is true, Content-Encoding is set to "gzip".
-   */
-  public ApacheHttpClient(URL url, int requestLength, boolean closeConnections, RpcOptions options,
-                          byte[] requestBody, int requestBodyLength, String contentType, boolean enableGzip) throws IOException {
-    this(url, requestLength, closeConnections, options, requestBody, requestBodyLength, contentType, enableGzip ? "gzip" : null);
+  /** Returns the entity with the given body, content type, and supporting the given content encoding, mainly in the form of compression */
+  private HttpEntity getEntity(byte[] requestBody, int requestBodyLength, String contentType, String contentEncoding) {
+    ByteArrayEntity inputEntity = new ByteArrayEntity(requestBody, 0, requestBodyLength);
+    inputEntity.setContentType(contentType);
+    if (contentEncoding == null)
+      return inputEntity;
+    switch (contentEncoding) {
+      case "gzip":
+        return new GzipCompressingEntity(inputEntity);
+      case "zstandard":
+      case "zstd":
+        return new ZstdCompressingEntity(inputEntity);
+      default:
+        return inputEntity;
+    }
   }
-
 
   private InputStream getResponseStream(HttpEntity responseEntity, String responseEncoding) throws IOException {
     if (responseEntity != null) {
@@ -106,8 +114,8 @@ public class ApacheHttpClient extends AbstractHttpClient {
 
   private static void createConnectionManager() {
     connectionManager = new PoolingHttpClientConnectionManager();
-    connectionManager.setMaxTotal(Knob.getInteger("scalyrClientMaxConnections", 20));
-    connectionManager.setDefaultMaxPerRoute(Knob.getInteger("scalyrClientMaxConnectionsPreRoute", 15));
+    connectionManager.setMaxTotal(scalyrClientMaxConnections.get());
+    connectionManager.setDefaultMaxPerRoute(scalyrClientMaxConnectionsPreRoute.get());
   }
 
   @Override public OutputStream getOutputStream() {

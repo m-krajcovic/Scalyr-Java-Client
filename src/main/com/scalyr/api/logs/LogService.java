@@ -64,6 +64,29 @@ public class LogService extends ScalyrService {
   public JSONObject uploadEvents(String sessionId, JSONObject sessionInfo,
       JSONStreamAware events, JSONArray threadInfos, boolean enableGzip)
       throws ScalyrException, ScalyrNetworkException {
+    return uploadEvents(sessionId, sessionInfo, events, threadInfos, enableGzip ? "gzip" : null);
+  }
+
+  /**
+   * Upload a batch of events to the Scalyr Logs service. See the
+   * <a href="https://www.scalyr.com/help/api">HTTP API documentation</a> for a detailed description
+   * of each parameter.
+   *
+   * @param sessionId ID of this process instance.
+   * @param sessionInfo Attributes to associate with this session. Should be remain constant for
+   *     all calls to uploadEvents with a given session ID.
+   * @param events The events to upload (a JSON array).
+   * @param threadInfos Optional; contains information for the threads referenced in the events array.
+   * @param contentEncoding Optional; type of compression to use on the upload.
+   *
+   * @return The JSON-formatted response from the server. See <a href='https://www.scalyr.com/help/api'>scalyr.com/help/api</a>.
+   *
+   * @throws ScalyrException
+   * @throws ScalyrNetworkException
+   */
+  public JSONObject uploadEvents(String sessionId, JSONObject sessionInfo,
+      JSONStreamAware events, JSONArray threadInfos, String contentEncoding)
+      throws ScalyrException, ScalyrNetworkException {
     JSONObject parameters = new JSONObject();
 
     parameters.put("clientVersion", 1);
@@ -75,7 +98,7 @@ public class LogService extends ScalyrService {
     if (threadInfos != null && threadInfos.size() > 0)
       parameters.put("threads", threadInfos);
 
-    return invokeApi("addEvents", parameters, enableGzip);
+    return invokeApi("addEvents", parameters, contentEncoding);
   }
 
   /**
@@ -83,7 +106,7 @@ public class LogService extends ScalyrService {
    */
   public JSONObject uploadEvents(String sessionId, JSONObject sessionInfo,
                                  JSONStreamAware events, JSONArray threadInfos) {
-    return uploadEvents(sessionId, sessionInfo, events, threadInfos, Events.ENABLE_GZIP_BY_DEFAULT);
+    return uploadEvents(sessionId, sessionInfo, events, threadInfos, Events.DEFAULT_COMPRESSION_TYPE.getContentType());
   }
 
   public static final int SPAN_TYPE_LEAF  = 0;

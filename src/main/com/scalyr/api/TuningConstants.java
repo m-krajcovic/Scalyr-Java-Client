@@ -194,13 +194,6 @@ public class TuningConstants {
   public static final int KNOB_CACHE_THRESHOLD = 100;
 
   /**
-   * If this variable is not null and evaluates to true, then we use the Apache Commons HTTP client library
-   * in EventUploader. Otherwise we use java.net.HttpURLConnection. NOTE: using the Apache Commons library
-   * increases memory usage somewhat, as we must assemble each request in memory before transmission.
-   */
-  public static volatile Knob.Boolean useApacheHttpClientForEventUploader = null;
-
-  /**
    * If not null, then we increment this each time we initiate a request to the Scalyr server.
    */
   public static volatile CounterGauge serverInvocationCounter = null;

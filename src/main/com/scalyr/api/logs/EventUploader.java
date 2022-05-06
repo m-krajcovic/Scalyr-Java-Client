@@ -27,6 +27,7 @@ import com.scalyr.api.json.JSONArray;
 import com.scalyr.api.json.JSONObject;
 import com.scalyr.api.json.JSONParser.JsonParseException;
 import com.scalyr.api.json.RawJson;
+import com.scalyr.api.knobs.Knob;
 import com.scalyr.api.logs.EventFilter.FilterInput;
 import com.scalyr.api.logs.EventFilter.FilterOutput;
 
@@ -43,6 +44,23 @@ import java.util.concurrent.TimeUnit;
  * Internal class which buffers events, and periodically uploads them to the Scalyr Logs service.
  */
 public class EventUploader {
+  public enum CompressionType {
+    None(null),
+    Gzip("gzip"),
+    Zstandard("zstandard");
+
+    private final String contentType;
+
+    CompressionType(String contentType) {
+      this.contentType = contentType;
+    }
+    public String getContentType() {
+      return contentType;
+    }
+  }
+
+  private static final Knob.String defaultCompressionType = new Knob.String("defaultCompressionType", "gzip");
+
   /**
    * Special value used in certain situations for a timestamp parameter; means "atomically assign a monotonic timestamp". All
    * parameters that can accept this value will explicitly document that support. ONLY FOR INTERNAL SCALYR USE.
@@ -93,11 +111,8 @@ public class EventUploader {
    */
   private String ourHostname;
 
-  /**
-   * Used to enable/disable Gzip compression on uploads.
-   * Can be toggled using Events.enableGzip() and Events.disableGzip().
-   */
-  protected static boolean enableGzip = Events.ENABLE_GZIP_BY_DEFAULT;
+  /** Used to set a compression method used on uploads. Can be set with Events.setCompressionType() */
+  protected CompressionType compression;
 
   /**
    * Random number generator used to avoid having multiple clients all upload events at the exact
@@ -285,6 +300,12 @@ public class EventUploader {
     this.serverAttributes     = serverAttributes;
     this.enableMetaMonitoring = enableMetaMonitoring;
     this.uploadExecutor       = uploadExecutor_;
+
+    try {
+      compression = CompressionType.valueOf(defaultCompressionType.get());
+    } catch (IllegalArgumentException ex) {
+      compression = CompressionType.Gzip;
+    }
 
     launchUploadTimer(sharedTimer_);
 
@@ -547,7 +568,7 @@ public class EventUploader {
       lastUploadStartMs = ScalyrUtil.currentTimeMillis();
       JSONObject rawResponse;
       try {
-        rawResponse = logService.uploadEvents(sessionId, sessionInfo, eventsToUpload, threadInfos, enableGzip);
+        rawResponse = logService.uploadEvents(sessionId, sessionInfo, eventsToUpload, threadInfos, compression.getContentType());
       } catch (RuntimeException ex) {
         logUploadFailure(bufferedBytes, ex.toString());
         throw ex;

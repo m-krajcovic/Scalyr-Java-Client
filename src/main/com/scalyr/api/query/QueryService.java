@@ -1024,9 +1024,7 @@ public class QueryService extends ScalyrService {
   public static void main(String[] args) {
     debugLogging = true;
 
-    // use the ApacheHttpClient; the java.net version is highly non-performant
     Knob.setDefaultFiles(new ConfigurationFile[0]);
-    TuningConstants.useApacheHttpClientForEventUploader = new Knob.Boolean("useApacheHttpClientForEventUploader", true);
 
     final String apiToken = System.getenv("scalyr_readlog_token");
     final String chunkSizeHours = System.getenv("scalyr_chunksize_hours");

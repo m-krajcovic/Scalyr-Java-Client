@@ -27,12 +27,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * Interface for recording events in the Scalyr Logs service.
  */
 public class Events {
-  private static AtomicReference<EventUploader> uploaderInstance = new AtomicReference<EventUploader>();
+  private static AtomicReference<EventUploader> uploaderInstance = new AtomicReference<>();
 
-  /**
-   * Whether to enable gzip compression on uploads by default.
-   */
-  public final static boolean ENABLE_GZIP_BY_DEFAULT = true;
+  /** Default compression method */
+  public final static EventUploader.CompressionType DEFAULT_COMPRESSION_TYPE = EventUploader.CompressionType.Gzip;
 
   /**
    * The most recent value passed to setEventFilter. We store this here, in addition to in the
@@ -110,26 +108,13 @@ public class Events {
     uploaderInstance.set(instance);
   }
 
-  /**
-   * Enable Gzip compression in the uploader.
-   */
-  public static void enableGzip() {
+  public static void setCompressionType(EventUploader.CompressionType compressionType) {
     EventUploader instance = uploaderInstance.get();
     if (instance == null)
-      throw new RuntimeException("Call Events.init() before Events.enableGzip()");
+      throw new RuntimeException("Call Events.init() before Events.setCompressionType()");
 
-    instance.enableGzip = true;
-  }
+    instance.compression = compressionType;
 
-  /**
-   * Disable Gzip compression in the uploader.
-   */
-  public static void disableGzip() {
-    EventUploader instance = uploaderInstance.get();
-    if (instance == null)
-      throw new RuntimeException("Call Events.init() before Events.disableGzip()");
-
-    instance.enableGzip = false;
   }
 
   /**
@@ -499,6 +484,6 @@ public class Events {
     EventUploader instance = new EventUploader(logService, memoryLimit, artificialSessionId, autoUpload, null, true, reportThreadNames);
     uploaderInstance.set(instance);
     instance.eventFilter = eventFilter;
-    instance.enableGzip = Events.ENABLE_GZIP_BY_DEFAULT;
+    instance.compression = Events.DEFAULT_COMPRESSION_TYPE;
   }
 }

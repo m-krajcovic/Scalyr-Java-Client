@@ -30,7 +30,6 @@ import com.scalyr.api.logs.Severity;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Random;
@@ -149,10 +148,29 @@ public abstract class ScalyrService {
   }
 
   /**
+   * Invoke methodName on a selected server, sending the specified parameters as the request
+   * body. Return the (JSON-format) response.
+   * <p>
+   * If a "retriable" error (e.g. a network error) occurs, we retry on another server. We continue
+   * retrying until a non-retriable error occurs, there are no more servers to try, or a reasonable
+   * deadline (TuningConstants.MAXIMUM_RETRY_PERIOD_MS) expires.
+   * <p>
+   * This method should not be called directly. Instead, work through method-specific wrappers.
+   *
+   * @param contentEncoding compression method to use
+   *
+   * @throws ScalyrException
+   * @throws ScalyrNetworkException
+   */
+  public JSONObject invokeApi(String methodName, JSONObject parameters, String contentEncoding) {
+    return invokeApiX(methodName, parameters, contentEncoding).response;
+  }
+
+  /**
    * Overloading invokeApi() with enableGzip set to default value.
    */
   public JSONObject invokeApi(String methodName, JSONObject parameters) {
-    return invokeApiX(methodName, parameters, Events.ENABLE_GZIP_BY_DEFAULT).response;
+    return invokeApiX(methodName, parameters, Events.DEFAULT_COMPRESSION_TYPE.getContentType()).response;
   }
 
   /**
@@ -174,10 +192,29 @@ public abstract class ScalyrService {
   }
 
   /**
+   * Invoke methodName on a selected server, sending the specified parameters as the request
+   * body. Return the (JSON-format) response, as well as additional data about the request and
+   * response.
+   * <p>
+   * If a "retriable" error (e.g. a network error) occurs, we retry on another server. We continue
+   * retrying until a non-retriable error occurs, there are no more servers to try, or a reasonable
+   * deadline (TuningConstants.MAXIMUM_RETRY_PERIOD_MS) expires.
+   * <p>
+   * This method should not be called directly. Instead, work through method-specific wrappers.
+   *
+   * @param contentEncoding compression method to use
+   * @throws ScalyrException
+   * @throws ScalyrNetworkException
+   */
+  public InvokeApiResult invokeApiX(String methodName, JSONObject parameters, String contentEncoding) {
+    return invokeApiX(methodName, parameters, new RpcOptions(), contentEncoding);
+  }
+
+  /**
    * Overloading 3-parameter invokeApiX() with enableGzip set to default value.
    */
   public InvokeApiResult invokeApiX(String methodName, JSONObject parameters) {
-    return invokeApiX(methodName, parameters, Events.ENABLE_GZIP_BY_DEFAULT);
+    return invokeApiX(methodName, parameters, Events.DEFAULT_COMPRESSION_TYPE.getContentType());
   }
 
   /**
@@ -195,6 +232,25 @@ public abstract class ScalyrService {
    * @throws ScalyrNetworkException
    */
   public InvokeApiResult invokeApiX(String methodName, JSONObject parameters, RpcOptions options, boolean enableGzip) {
+    return invokeApiX(methodName, parameters, options, enableGzip ? "gzip" : null);
+  }
+
+  /**
+   * Invoke methodName on a selected server, sending the specified parameters as the request
+   * body. Return the (JSON-format) response, as well as additional data about the request and
+   * response.
+   * <p>
+   * If a "retriable" error (e.g. a network error) occurs, we retry on another server. We continue
+   * retrying until a non-retriable error occurs, there are no more servers to try, or a reasonable
+   * deadline (TuningConstants.MAXIMUM_RETRY_PERIOD_MS) expires.
+   * <p>
+   * This method should not be called directly. Instead, work through method-specific wrappers.
+   *
+   * @param contentEncoding compression method to use
+   * @throws ScalyrException
+   * @throws ScalyrNetworkException
+   */
+  public InvokeApiResult invokeApiX(String methodName, JSONObject parameters, RpcOptions options, String contentEncoding) {
     // Produce a shuffled copy of the server addresses, so that load is distributed
     // across the servers.
     int N = serverAddresses.length;
@@ -215,7 +271,7 @@ public abstract class ScalyrService {
       String serverAddress = shuffled[serverIndex];
       long requestStartTimeMs = ScalyrUtil.currentTimeMillis();
       try {
-        return invokeApiOnServer(serverAddress, methodName, parameters, options, enableGzip);
+        return invokeApiOnServer(serverAddress, methodName, parameters, options, contentEncoding);
       } catch (ScalyrNetworkException ex) {
         // Fall into the loop and retry the operation on the next server.
         // If there are no more servers, or our deadline has expired, then
@@ -248,7 +304,7 @@ public abstract class ScalyrService {
    * Overloading 4-parameter invokeApiX() with enableGzip set to default value.
    */
   public InvokeApiResult invokeApiX(String methodName, JSONObject parameters, RpcOptions options) {
-    return invokeApiX(methodName, parameters, options, Events.ENABLE_GZIP_BY_DEFAULT);
+    return invokeApiX(methodName, parameters, options, Events.DEFAULT_COMPRESSION_TYPE.getContentType());
   }
 
   /**
@@ -311,7 +367,7 @@ public abstract class ScalyrService {
    * @throws ScalyrNetworkException
    */
   protected InvokeApiResult invokeApiOnServer(String serverAddress, String methodName, JSONObject parameters,
-      RpcOptions options, boolean enableGzip) {
+      RpcOptions options, String contentEncoding) {
     AbstractHttpClient httpClient = null;
 
     long timeBeforeCreatingClient = System.nanoTime();
@@ -335,21 +391,11 @@ public abstract class ScalyrService {
         TuningConstants.serverInvocationCounter.increment();
 
       try {
-        if (TuningConstants.useApacheHttpClientForEventUploader != null && TuningConstants.useApacheHttpClientForEventUploader.get()) {
-          ByteArrayOutputStream requestBuffer = new ByteArrayOutputStream();
-          parameters.writeJSONBytes(requestBuffer);
+        ByteArrayOutputStream requestBuffer = new ByteArrayOutputStream();
+        parameters.writeJSONBytes(requestBuffer);
 
-          byte[] byteArray = requestBuffer.toByteArray();
-          httpClient = new ApacheHttpClient(url, requestLength, closeConnections, options, byteArray, byteArray.length,
-                                            "application/json", enableGzip);
-        } else {
-          httpClient = new JavaNetHttpClient(url, requestLength, closeConnections, options, "application/json", enableGzip);
-
-          OutputStream output = httpClient.getOutputStream();
-          parameters.writeJSONBytes(output);
-          output.flush();
-          output.close();
-        }
+        byte[] byteArray = requestBuffer.toByteArray();
+        httpClient = new ApacheHttpClient(url, options, byteArray, byteArray.length, "application/json", contentEncoding);
 
         // Retrieve the response.
         timeBeforeRequestingResponse = System.nanoTime();
@@ -444,13 +490,6 @@ public abstract class ScalyrService {
         httpClient.disconnect();
       }
     }
-  }
-
-  /**
-   * Overloading invokeApiOnServer() with enableGzip set to default value.
-   */
-  protected InvokeApiResult invokeApiOnServer(String serverAddress, String methodName, JSONObject parameters, RpcOptions options) {
-    return invokeApiOnServer(serverAddress, methodName, parameters, options, Events.ENABLE_GZIP_BY_DEFAULT);
   }
 
   public static void throwIfErrorStatus(JSONObject responseJson) {

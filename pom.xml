@@ -4,7 +4,7 @@
     <groupId>com.scalyr</groupId>
     <artifactId>scalyr-client</artifactId>
     <packaging>jar</packaging>
-    <version>6.0.32-SNAPSHOT</version>
+    <version>7.0.00-SNAPSHOT</version>
     <name>Scalyr Client</name>
     <description>Client library for the Scalyr API</description>
     <url>https://github.com/scalyr/Scalyr-Java-Client</url>
@@ -84,6 +84,12 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>30.0-jre</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+            <version>1.5.2-2</version>
         </dependency>
     </dependencies>
 
