@@ -326,6 +326,16 @@ public class EventUploader {
     }
   }
 
+  /** Returns the compression method that the uploader is currently using */
+  public CompressionType getCompression() {
+    return compression;
+  }
+
+  /** Allows to set a desired compression method from the set of supported methods */
+  public void setCompression(CompressionType compression) {
+    this.compression = compression;
+  }
+
   /**
    * Add an event to our buffer.
    * <p>
