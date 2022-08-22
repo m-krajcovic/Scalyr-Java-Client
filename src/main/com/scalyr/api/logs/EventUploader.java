@@ -807,7 +807,11 @@ public class EventUploader {
               if (uploadExecutor != null) {
                 uploadExecutor.execute(new Runnable() {
                   @Override public void run() {
-                    uploadTimerTick(false);
+                    try {
+                      uploadTimerTick(false);
+                    } catch (Throwable ex) {
+                      Logging.log(EventUploader.this, Severity.warning, Logging.tagInternalError, "Exception in Logs upload timer", ex);
+                    }
                   }
                 });
               } else {
